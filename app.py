@@ -151,7 +151,18 @@ if menu == "Sales Entry":
         future = model.predict(np.array(range(13,25)).reshape(-1,1))
 
         fig2 = go.Figure()
-        fig2.add_trace(go.Scatter(x=range(1,13), y=sales, name="Actual"))
-        fig2.add_trace(go.Scatter(x=range(13,25), y=future, name="Predicted"))
+        fig2.add_trace(go.Scatter(
+    x=list(range(1,13)),
+    y=sales,
+    name="Actual",
+    mode="lines+markers"
+))
+
+fig2.add_trace(go.Scatter(
+    x=list(range(13,25)),
+    y=list(future),
+    name="Predicted",
+    mode="lines+markers"
+))
 
         st.plotly_chart(fig2, use_container_width=True)
