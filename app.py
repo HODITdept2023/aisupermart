@@ -1,139 +1,157 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 from sklearn.linear_model import LinearRegression
 
-# ----------------------------
-# LOGIN SYSTEM
-# ----------------------------
+# -----------------------------
+# PAGE CONFIG
+# -----------------------------
+st.set_page_config(layout="wide")
 
+# -----------------------------
+# CUSTOM CSS (Admin Style)
+# -----------------------------
+st.markdown("""
+<style>
+body {
+    background-color: #f4f6f9;
+}
+.sidebar .sidebar-content {
+    background-color: #111827;
+}
+.kpi-card {
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+}
+.blue { background-color: #3b82f6; }
+.green { background-color: #10b981; }
+.orange { background-color: #f59e0b; }
+.red { background-color: #ef4444; }
+</style>
+""", unsafe_allow_html=True)
+
+# -----------------------------
+# LOGIN
+# -----------------------------
 def login():
-    st.title("🔐 AI MART Admin Login")
-
-    username = st.text_input("User ID")
-    password = st.text_input("Password", type="password")
-
+    st.title("🔐 Admin Login")
+    user = st.text_input("User ID")
+    pwd = st.text_input("Password", type="password")
     if st.button("Login"):
-        if username == "admin" and password == "aimart2026":
-            st.session_state["authenticated"] = True
+        if user == "admin" and pwd == "aimart2026":
+            st.session_state.auth = True
         else:
             st.error("Invalid Credentials")
 
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
+if "auth" not in st.session_state:
+    st.session_state.auth = False
 
-if not st.session_state["authenticated"]:
+if not st.session_state.auth:
     login()
     st.stop()
 
-# ----------------------------
+# -----------------------------
+# SIDEBAR
+# -----------------------------
+st.sidebar.title("AI MART")
+st.sidebar.markdown("### Navigation")
+menu = st.sidebar.radio("", ["Dashboard", "Sales Entry"])
+
+# -----------------------------
 # DASHBOARD
-# ----------------------------
+# -----------------------------
+if menu == "Dashboard":
 
-st.title("🛒 AI MART Sales Dashboard")
+    st.title("📊 Dashboard Overview")
 
-year = st.number_input("Enter Year", min_value=2000, max_value=2100, step=1)
+    # Sample KPI Data
+    total_orders = 150
+    bounce_rate = 53
+    registrations = 44
+    visitors = 65
 
-months = ["Jan","Feb","Mar","Apr","May","Jun",
-          "Jul","Aug","Sep","Oct","Nov","Dec"]
+    col1, col2, col3, col4 = st.columns(4)
 
-st.subheader("📊 Enter Monthly Data")
-
-sales = []
-stock = []
-profit = []
-expenses = []
-customers = []
-discount = []
-
-for m in months:
-    st.markdown(f"### {m}")
-    col1, col2, col3 = st.columns(3)
-    
     with col1:
-        sales.append(st.number_input(f"{m} Sales", key=f"s_{m}"))
-        stock.append(st.number_input(f"{m} Stock", key=f"st_{m}"))
-        
+        st.markdown(f'<div class="kpi-card blue"><h2>{total_orders}</h2><p>New Orders</p></div>', unsafe_allow_html=True)
+
     with col2:
-        profit.append(st.number_input(f"{m} Profit", key=f"p_{m}"))
-        expenses.append(st.number_input(f"{m} Expenses", key=f"e_{m}"))
-        
+        st.markdown(f'<div class="kpi-card green"><h2>{bounce_rate}%</h2><p>Bounce Rate</p></div>', unsafe_allow_html=True)
+
     with col3:
-        customers.append(st.number_input(f"{m} Customers", key=f"c_{m}"))
-        discount.append(st.number_input(f"{m} Discount %", key=f"d_{m}"))
+        st.markdown(f'<div class="kpi-card orange"><h2>{registrations}</h2><p>User Registrations</p></div>', unsafe_allow_html=True)
 
-# ----------------------------
-# ANALYZE BUTTON
-# ----------------------------
+    with col4:
+        st.markdown(f'<div class="kpi-card red"><h2>{visitors}</h2><p>Unique Visitors</p></div>', unsafe_allow_html=True)
 
-if st.button("📈 Analyze & Predict"):
+    st.markdown("---")
 
-    data = pd.DataFrame({
-        "Month": months,
-        "Sales": sales,
-        "Stock": stock,
-        "Profit": profit,
-        "Expenses": expenses,
-        "Customers": customers,
-        "Discount_%": discount
-    })
+    # Sales Graph
+    months = ["Jan","Feb","Mar","Apr","May","Jun"]
+    sales1 = [30, 45, 40, 25, 80, 35]
+    sales2 = [60, 55, 75, 78, 52, 48]
 
-    st.subheader("📋 Dataset")
-    st.dataframe(data)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=months, y=sales1, mode='lines', name='2023'))
+    fig.add_trace(go.Scatter(x=months, y=sales2, mode='lines', name='2024'))
 
-    total_sales = sum(sales)
-    total_profit = sum(profit)
-    total_expenses = sum(expenses)
+    fig.update_layout(title="Sales Value",
+                      template="plotly_white",
+                      height=400)
 
-    best_month = months[sales.index(max(sales))]
-    worst_month = months[sales.index(min(sales))]
+    left, right = st.columns([2,1])
 
-    st.subheader("📊 Yearly Summary")
-    st.write("Total Sales:", total_sales)
-    st.write("Total Profit:", total_profit)
-    st.write("Total Expenses:", total_expenses)
-    st.write("Best Month:", best_month)
-    st.write("Worst Month:", worst_month)
+    with left:
+        st.plotly_chart(fig, use_container_width=True)
 
-    # Prediction
-    X = np.array(range(1,13)).reshape(-1,1)
-    y = np.array(sales)
+    with right:
+        st.markdown("### Sales Summary")
+        st.write("Visitors: 1,230")
+        st.write("Online: 842")
+        st.write("Sales: 523")
 
-    model = LinearRegression()
-    model.fit(X,y)
+# -----------------------------
+# SALES ENTRY PAGE
+# -----------------------------
+if menu == "Sales Entry":
 
-    next_month = model.predict([[13]])[0]
-    future = model.predict(np.array(range(13,25)).reshape(-1,1))
+    st.title("📈 Sales Input & Prediction")
 
-    st.subheader("🔮 Predictions")
-    st.write("Predicted Next Month Sales:", round(next_month,2))
-    st.write("Predicted Next Year Sales:", round(sum(future),2))
+    year = st.number_input("Enter Year", min_value=2000, max_value=2100)
 
-    # Graphs
-    st.subheader("📈 Sales Trend")
-    fig1 = plt.figure()
-    plt.plot(months, sales)
-    st.pyplot(fig1)
+    months = ["Jan","Feb","Mar","Apr","May","Jun",
+              "Jul","Aug","Sep","Oct","Nov","Dec"]
 
-    st.subheader("💰 Profit vs Expenses")
-    fig2 = plt.figure()
-    plt.plot(months, profit)
-    plt.plot(months, expenses)
-    st.pyplot(fig2)
+    sales = []
 
-    st.subheader("📊 Forecast")
-    fig3 = plt.figure()
-    plt.plot(range(1,13), sales)
-    plt.plot(range(13,25), future, linestyle="dashed")
-    st.pyplot(fig3)
+    st.markdown("### Enter Monthly Sales")
 
-    # Insights
-    st.subheader("💡 Business Insights")
+    cols = st.columns(4)
 
-    if total_profit < total_expenses:
-        st.warning("Expenses are higher than profit.")
-    if np.mean(discount) > 20:
-        st.info("High discount strategy detected.")
-    if np.mean(customers) < 400:
-        st.warning("Low customer engagement.")
+    for i, m in enumerate(months):
+        with cols[i % 4]:
+            sales.append(st.number_input(m, key=m))
+
+    if st.button("Analyze"):
+
+        total_sales = sum(sales)
+        best_month = months[sales.index(max(sales))]
+
+        st.markdown("### Results")
+        st.write("Total Sales:", total_sales)
+        st.write("Best Month:", best_month)
+
+        # Prediction
+        X = np.array(range(1,13)).reshape(-1,1)
+        model = LinearRegression()
+        model.fit(X, np.array(sales))
+
+        future = model.predict(np.array(range(13,25)).reshape(-1,1))
+
+        fig2 = go.Figure()
+        fig2.add_trace(go.Scatter(x=range(1,13), y=sales, name="Actual"))
+        fig2.add_trace(go.Scatter(x=range(13,25), y=future, name="Predicted"))
+
+        st.plotly_chart(fig2, use_container_width=True)
